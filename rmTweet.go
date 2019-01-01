@@ -23,7 +23,7 @@ var (
 )
 
 var days int
-var likes, tweets, retweets, test bool
+var likes, tweets, retweets, test, doLog bool
 var now = time.Now().Format("20060102150405")
 var logDir = "./log/"
 
@@ -78,7 +78,7 @@ func remove(api *anaconda.TwitterApi, object string) {
 		}
 	}
 
-	if len(deleteTweets) > 0 {
+	if doLog && len(deleteTweets) > 0 {
 		deleteTweetsJson, _ := json.Marshal(deleteTweets)
 		if object == "tweets" {
 			err = writeHistory("deleted_tweets", deleteTweetsJson)
@@ -116,6 +116,7 @@ func handleFlags() {
 	flag.BoolVar(&retweets, "retweets", false, "This will un-retweet past tweets (must use along with -tweets option)")
 	flag.BoolVar(&likes, "likes", false, "This will unlike past tweets")
 	flag.BoolVar(&test, "test", false, "This will prevent any actual changes from occurring")
+	flag.BoolVar(&doLog, "log", true, "Create log files of deleted tweets")
 	flag.IntVar(&days, "days", 0, "Only affect tweets created before n day(s) ago (Default 0)")
 	flag.Parse()
 }
@@ -143,8 +144,10 @@ func main() {
 	days = int(math.Copysign(float64(days), -1))
 
 	// Configure settings for logging
-	l := setupLogger("summary_output_" + now + ".txt")
-	defer l.Close()
+	if doLog {
+		l := setupLogger("summary_output_" + now + ".txt")
+		defer l.Close()
+	}
 
 	anaconda.SetConsumerKey(consumerKey)
 	anaconda.SetConsumerSecret(consumerSecret)
